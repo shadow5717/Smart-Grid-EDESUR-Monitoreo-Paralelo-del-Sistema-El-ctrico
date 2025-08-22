@@ -11,7 +11,8 @@ namespace SmartGridEDESUR.Tests
         [Fact]
         public void ParallelFor_Funciona_Bien()
         {
-            var metodo = new EstrategiaParallelFor();
+            var nivelTension = new NivelTensionRed(110.0);
+            var metodo = new EstrategiaParallelFor(nivelTension);
             var fallas = HacerFallas(10);
 
             var tiempo = metodo.ProcesarFallas(fallas);
@@ -23,7 +24,8 @@ namespace SmartGridEDESUR.Tests
         [Fact]
         public void TaskRun_Funciona_Bien()
         {
-            var metodo = new EstrategiaTaskRun();
+            var nivelTension = new NivelTensionRed(110.0);
+            var metodo = new EstrategiaTaskRun(nivelTension);
             var fallas = HacerFallas(10);
 
             var tiempo = metodo.ProcesarFallas(fallas);
@@ -35,7 +37,8 @@ namespace SmartGridEDESUR.Tests
         [Fact]
         public void Threads_Funciona_Bien()
         {
-            var metodo = new EstrategiaThreads();
+            var nivelTension = new NivelTensionRed(110.0);
+            var metodo = new EstrategiaThreads(nivelTension);
             var fallas = HacerFallas(10);
 
             var tiempo = metodo.ProcesarFallas(fallas);
@@ -61,10 +64,10 @@ namespace SmartGridEDESUR.Tests
                 fallas.Add(new SensorFalla(
                     i + 1,
                     DateTime.Now,
-                    "Test",
-                    220,
+                    "Pueblo Nuevo, Calle Duarte #10, Los Alcarrizos",
+                    110,
                     10,
-                    50,
+                    60,
                     TipoFalla.Sobrecarga,
                     5
                 ));
