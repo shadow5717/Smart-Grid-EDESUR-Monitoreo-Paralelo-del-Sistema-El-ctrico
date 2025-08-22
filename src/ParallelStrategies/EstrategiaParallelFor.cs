@@ -12,15 +12,26 @@ namespace SmartGridEDESUR.ParallelStrategies
         public string Nombre { get { return "Parallel.For"; } }
         public List<string> Resultados { get; } = new List<string>();
         public int FallasProcesadas { get { return Resultados.Count; } }
+        public NivelTensionRed NivelTension { get; set; }
 
         private ConcurrentBag<string> _resultados = new ConcurrentBag<string>();
+
+        public EstrategiaParallelFor(NivelTensionRed nivelTension)
+        {
+            NivelTension = nivelTension;
+        }
 
         public TimeSpan ProcesarFallas(List<SensorFalla> fallas)
         {
             var reloj = Stopwatch.StartNew();
             _resultados = new ConcurrentBag<string>();
 
-            Parallel.For(0, fallas.Count, i =>
+            var options = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            };
+
+            Parallel.For(0, fallas.Count, options, i =>
             {
                 var resultado = ProcesarFalla(fallas[i]);
                 _resultados.Add(resultado);
@@ -36,26 +47,51 @@ namespace SmartGridEDESUR.ParallelStrategies
             int delay = 10 + (falla.Prioridad * 2);
             System.Threading.Thread.Sleep(delay);
 
-            return "Falla " + falla.Id + " (" + falla.Tipo + ") en " + falla.Ubicacion +
-                   " - Accion: " + ObtenerAccion(falla.Tipo, falla.Prioridad);
+            double cambioTension = CalcularCambioTension(falla);
+            NivelTension.AjustarTension(cambioTension);
+
+            return $"Falla {falla.Id} ({falla.Tipo}) en {falla.Ubicacion} " +
+                   $"- Acción: {ObtenerAccion(falla.Tipo, falla.Prioridad)} " +
+                   $"- ΔTensión: {cambioTension:0.00}V";
+        }
+
+        private double CalcularCambioTension(SensorFalla falla)
+        {
+            switch (falla.Tipo)
+            {
+                case TipoFalla.Sobrecarga:
+                    return -(falla.Prioridad * 0.5);
+                case TipoFalla.Cortocircuito:
+                    return -(falla.Prioridad * 2.0);
+                case TipoFalla.CaidaVoltaje:
+                    return -(falla.Prioridad * 1.5);
+                case TipoFalla.AumentoVoltaje:
+                    return falla.Prioridad * 1.2;
+                case TipoFalla.PerdidaFase:
+                    return -(falla.Prioridad * 3.0);
+                case TipoFalla.FalloEquipo:
+                    return -(falla.Prioridad * 1.8);
+                default:
+                    return 0;
+            }
         }
 
         private string ObtenerAccion(TipoFalla tipo, int prioridad)
         {
             if (tipo == TipoFalla.Sobrecarga)
-                return prioridad > 5 ? "DESCONEXION" : "Monitorear";
+                return prioridad > 7 ? "DESCONEXIÓN INMEDIATA" : "Monitoreo reforzado";
             else if (tipo == TipoFalla.Cortocircuito)
-                return "AISLAR Y REPARAR";
+                return "AISLAR Y REPARAR - EQUIPO DE EMERGENCIA";
             else if (tipo == TipoFalla.CaidaVoltaje)
-                return "AJUSTAR VOLTAJE";
+                return prioridad > 5 ? "AJUSTE DE TAPs TRANSFORMADORES" : "Monitorear";
             else if (tipo == TipoFalla.AumentoVoltaje)
-                return "PROTEGER SOBRETENSION";
+                return "PROTECCIÓN SOBRETENSIÓN - AJUSTE REGULADORES";
             else if (tipo == TipoFalla.PerdidaFase)
-                return "ENVIAR TECNICO";
+                return "ENVIAR TÉCNICOS ESPECIALIZADOS";
             else if (tipo == TipoFalla.FalloEquipo)
-                return "REPARAR EQUIPO";
+                return "PROGRAMAR MANTENIMIENTO EQUIPO";
             else
-                return "VERIFICAR";
+                return "VERIFICAR CON SUPERvisor";
         }
     }
 }
