@@ -7,7 +7,7 @@ Se realizaron pruebas con 10,000 sensores simulados** procesados mediante distin
 - Número de fallas detectadas.
 - Escalabilidad con mayor cantidad de sensores.
 
-## Resultados (ejemplo)
+ Resultados 
 | Estrategia           | Tiempo (ms) | Fallas Detectadas |
 | Parallel.For         | 120         | 3,421             |
 | Task.Run             | 135         | 3,421             |
@@ -22,4 +22,5 @@ Se realizaron pruebas con 10,000 sensores simulados** procesados mediante distin
 - Los resultados fueron exportados a:
   - metrics/Comparativa_Tiempos.csv
   - metrics/Resultados_Graficos.png
+
 
